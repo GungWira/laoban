@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laoban Restaurant - Dengan Gambar Menu</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #e63946;
+      --primary-foreground: #ffffff;
+      --secondary: #f1faee;
+      --foreground: #1d3557;
+      --muted-foreground: #457b9d;
+      --background: #f8f9fa;
+      --card: #ffffff;
+      --card-foreground: #1d3557;
+      --border: #dee2e6;
+      --destructive: #dc3545;
+    }
+
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+           background-color: var(--background); color: var(--foreground); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+
+    header { background: var(--primary); color: var(--primary-foreground);
+             padding: 1rem 0; position: sticky; top: 0; z-index: 100; }
+
+    button { cursor: pointer; border: none; border-radius: 0.375rem; transition: all 0.2s; }
+
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); padding: 0.5rem 1rem; }
+    .btn-primary:hover { background: #c1121f; }
+
+    .category-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; }
+    .category-btn { padding: 0.5rem 1rem; border-radius: 9999px; background: var(--secondary); color: var(--foreground); }
+    .category-btn.active { background: var(--primary); color: var(--primary-foreground); }
+
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .menu-card { background: var(--card); border-radius: 0.5rem; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .menu-card:hover { transform: translateY(-5px); }
+    .menu-card img { width: 100%; height: 200px; object-fit: cover; }
+    .menu-card-content { padding: 1.5rem; }
+    .menu-card h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .menu-card p { color: var(--muted-foreground); margin-bottom: 1rem; }
+    .menu-card-actions { display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState } = React;
+
+    // ⭐ Komponen rating
+    const RatingStars = ({ rating }) => {
+      const fullStars = Math.floor(rating);
+      const halfStar = rating % 1 >= 0.5;
+      const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+      return (
+        <div style={{color: '#f39c12', fontSize: '1rem', marginBottom: '0.5rem'}}>
+          {'★'.repeat(fullStars)}
+          {halfStar && '☆'}
+          {'☆'.repeat(emptyStars)}
+          <span style={{color: 'var(--muted-foreground)', fontSize: '0.9rem'}}> ({rating})</span>
+        </div>
+      );
+    };
+
+    const LaobanFoodWebsite = () => {
+      const [selectedCategory, setSelectedCategory] = useState('all');
+      const [cartItems, setCartItems] = useState([]);
+      const [isCartOpen, setIsCartOpen] = useState(false);
+      const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+      const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+      const [customer, setCustomer] = useState({ name: "", phone: "", address: "" });
+
+      const categories = ['all', 'appetizers', 'main', 'desserts', 'drinks'];
+      const menuItems = [
+        { id: 1, name: 'Butter Kaya Toast', description: 'crispy slices of toast spread with kaya jam', price: 45000, category: 'appetizers', image: 'https://cdn.medcom.id/dynamic/content/2024/10/10/1719671/0GvKMwyPSz.jpg?w=480', rating: 4.5 },
+        { id: 2, name: 'Lumpia', description: 'fried food consisting of filling wrapped in a thin skin made of wheat flour.', price: 55000, category: 'appetizers', image: 'https://i.pinimg.com/1200x/1c/55/67/1c5567f1b0483ba907e826ff172e863b.jpg', rating: 4.7 },
+        { id: 3, name: 'Nasi Goreng Hongkong', description: 'Traditional Hongkong fried rice with egg and vegetables', price: 65000, category: 'main', image: 'https://i.pinimg.com/736x/79/3b/06/793b06f69a3817eeaa8274ee0bfb3415.jpg', rating: 4.8 },
+        { id: 4, name: 'Mie Laksa', description: 'a typical Southeast Asian noodle dish', price: 75000, category: 'main', image: 'https://i.pinimg.com/736x/d9/20/95/d9209509ff127becf9f4a2e570cd0586.jpg', rating: 5.0 },
+        { id: 5, name: 'Nasi Hainan', description: 'very tender boiled or roasted chicken served over rice cooked in chicken stock and fat', price: 60000, category: 'main', image: 'https://i.pinimg.com/1200x/06/91/f8/0691f86ab4725c59b33914b95599a399.jpg', rating: 4.6 },
+        { id: 6, name: 'Es Coklat Uncle', description: 'is a thick, creamy, and refreshing chocolate drinky', price: 35000, category: 'desserts', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_G3WFK3LvpeYncti6Y7vEdcIHD9_pYeRokw&s', rating: 4.4 },
+        { id: 7, name: 'Es Teh Tarik', description: 'black tea mixed with condensed milk', price: 20000, category: 'drinks', image: 'https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/147f4f35-1f8f-4a94-9fa1-08c13b56231e_menu-item-image_1713227639683.jpg', rating: 4.2 },
+        { id: 8, name: 'KopiTiam', description: 'the result of robusta coffee beans roasted with margarine or butter', price: 25000, category: 'drinks', image: 'https://santinocoffee.co.id/wp-content/uploads/2024/08/Image-FHI-2024-Website-12-1080x675.png', rating: 4.3 }
+      ];
+
+      const filteredItems = selectedCategory === 'all' ? menuItems : menuItems.filter(i => i.category === selectedCategory);
+
+      const addToCart = (item) => {
+        const exist = cartItems.find(c => c.id === item.id);
+        if (exist) setCartItems(cartItems.map(c => c.id === item.id ? {...c, quantity: c.quantity + 1} : c));
+        else setCartItems([...cartItems, {...item, quantity: 1}]);
+      };
+
+      const removeFromCart = (id) => setCartItems(cartItems.filter(c => c.id !== id));
+      const getTotalPrice = () => cartItems.reduce((t, i) => t + i.price * i.quantity, 0);
+
+      const CartItem = ({ item }) => (
+        <div style={{display:'flex', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid var(--border)'}}>
+          <div><h4>{item.name}</h4><p>Rp {item.price.toLocaleString('id-ID')}</p></div>
+          <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+            <span>{item.quantity}</span>
+            <button onClick={() => removeFromCart(item.id)} style={{color:'var(--destructive)'}}>Remove</button>
+          </div>
+        </div>
+      );
+
+      return (
+        <div>
+          {/* Header */}
+          <header>
+            <div className="container" style={{display:'flex', justifyContent:'space-between'}}>
+              <h1>Laoban</h1>
+              <button onClick={() => setIsCartOpen(true)} className="btn-primary">Cart ({cartItems.length})</button>
+            </div>
+          </header>
+
+          {/* Menu */}
+          <main className="container" style={{padding:'2rem 1rem'}}>
+            <div className="category-filter">
+              {categories.map(cat => (
+                <button key={cat} onClick={() => setSelectedCategory(cat)} className={`category-btn ${selectedCategory === cat ? 'active':''}`}>
+                  {cat.charAt(0).toUpperCase()+cat.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="menu-grid">
+              {filteredItems.map(item => (
+                <div key={item.id} className="menu-card">
+                  <img src={item.image} alt={item.name} onError={e => e.target.src='https://via.placeholder.com/300x200/eee/999?text=Image+Not+Found'} />
+                  <div className="menu-card-content">
+                    <h3>{item.name}</h3>
+                    <RatingStars rating={item.rating}/>
+                    <p>{item.description}</p>
+                    <div className="menu-card-actions">
+                      <span>Rp {item.price.toLocaleString('id-ID')}</span>
+                      <button onClick={() => addToCart(item)} className="btn-primary">Add to Cart</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </main>
+
+          {/* Cart Sidebar */}
+          {isCartOpen && (
+            <div style={{position:'fixed', top:0, right:0, width:'100%', maxWidth:'400px', height:'100vh', background:'var(--background)', boxShadow:'-2px 0 10px rgba(0,0,0,0.1)', padding:'1.5rem', overflowY:'auto'}}>
+              <h2>Your Cart</h2>
+              <div>
+                {cartItems.length===0 ? <p>Keranjang kosong</p> : cartItems.map(i => <CartItem key={i.id} item={i}/>)}
+              </div>
+              {cartItems.length>0 && (
+                <div style={{marginTop:'1rem'}}>
+                  <h3>Total: Rp {getTotalPrice().toLocaleString('id-ID')}</h3>
+                  <button className="btn-primary" style={{width:'100%', marginTop:'1rem'}} onClick={() => setIsCheckoutOpen(true)}>Checkout</button>
+                </div>
+              )}
+              <button style={{marginTop:'1rem', width:'100%'}} onClick={() => setIsCartOpen(false)}>Close</button>
+            </div>
+          )}
+
+          {/* Checkout Modal */}
+          {isCheckoutOpen && (
+            <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100vh', background:'rgba(0,0,0,0.5)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:2000}}>
+              <div style={{background:'#fff', padding:'2rem', borderRadius:'10px', maxWidth:'500px', width:'90%'}}>
+                <h2>Checkout</h2>
+                <h3>Pesanan Anda:</h3>
+                <ul>
+                  {cartItems.map(i => <li key={i.id}>{i.quantity}x {i.name} - Rp {(i.price*i.quantity).toLocaleString('id-ID')}</li>)}
+                </ul>
+                <h3>Total: Rp {getTotalPrice().toLocaleString('id-ID')}</h3>
+
+                <div style={{marginTop:'1rem'}}>
+                  <input type="text" placeholder="Nama Anda" value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})} style={{width:'100%', marginBottom:'0.5rem', padding:'0.5rem'}}/>
+                  <input type="text" placeholder="Nomor HP" value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})} style={{width:'100%', marginBottom:'0.5rem', padding:'0.5rem'}}/>
+                  <textarea placeholder="Nomor Meja" value={customer.address} onChange={e=>setCustomer({...customer,address:e.target.value})} style={{width:'100%', marginBottom:'0.5rem', padding:'0.5rem'}}/>
+                </div>
+
+                <button className="btn-primary" style={{width:'100%', marginBottom:'0.5rem'}} onClick={() => { setIsSuccessOpen(true); setCartItems([]); }}>Konfirmasi Pesanan</button>
+                <button style={{width:'100%'}} onClick={()=>setIsCheckoutOpen(false)}>Batal</button>
+              </div>
+            </div>
+          )}
+
+          {/* Success Modal Alert */}
+          {isSuccessOpen && (
+            <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100vh', background:'rgba(0,0,0,0.5)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:3000}}>
+              <div style={{background:'#fff', padding:'2rem', borderRadius:'10px', textAlign:'center', maxWidth:'400px', width:'90%'}}>
+                <h2 style={{color:'green'}}>✅ Pesanan Berhasil!</h2>
+                <p>Terima kasih {customer.name}, pesanan Anda sedang diproses.</p>
+                <button className="btn-primary" style={{marginTop:'1rem', width:'100%'}} onClick={() => { setIsSuccessOpen(false); setIsCheckoutOpen(false); setIsCartOpen(false); }}>Tutup</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<LaobanFoodWebsite />);
+  </script>
+</body>
+</html>
